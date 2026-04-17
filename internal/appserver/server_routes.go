@@ -17,9 +17,42 @@ var allowedStatic = map[string]string{
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Accept both GET and HEAD for all read endpoints
 	isRead := r.Method == http.MethodGet || r.Method == http.MethodHead
 
+	// Login routes — always public
+	if r.URL.Path == "/login" {
+		switch {
+		case isRead:
+			s.handleLoginPage(w, r)
+		case r.Method == http.MethodPost:
+			s.handleLoginSubmit(w, r)
+		default:
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		}
+		return
+	}
+
+	// Static assets — always public (themes needed for login page styling)
+	if isRead {
+		if contentType, ok := allowedStatic[r.URL.Path]; ok {
+			s.HandleStaticFile(w, r, r.URL.Path, contentType)
+			return
+		}
+	}
+
+	// Auth gate — if auth is configured, require valid session
+	if s.authEnabled() && !s.isAuthenticated(r) {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	// Logout — requires auth
+	if r.Method == http.MethodPost && r.URL.Path == "/logout" {
+		s.handleLogout(w, r)
+		return
+	}
+
+	// Existing routes (unchanged)
 	switch {
 	case isRead && (r.URL.Path == "/" || r.URL.Path == "/index.html"):
 		s.handleIndex(w, r)
@@ -39,15 +72,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	case r.Method == http.MethodPost && r.URL.Path == "/api/chat":
 		s.handleChat(w, r)
-	case isRead:
-		// Serve allowlisted static files from disk
-		if contentType, ok := allowedStatic[r.URL.Path]; ok {
-			s.HandleStaticFile(w, r, r.URL.Path, contentType)
-			return
-		}
-		s.notFound(w, r)
 	default:
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		if isRead {
+			s.notFound(w, r)
+		} else {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		}
 	}
 }
 

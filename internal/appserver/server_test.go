@@ -23,7 +23,7 @@ func newTestServer(t *testing.T) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	refreshFn := func(ctx context.Context, dir, openclawPath string, cfgs ...appconfig.Config) error { return nil }
-	return NewServer(dir, "1.0.0-test", cfg, "test-token", indexHTML, ctx, refreshFn)
+	return NewServer(dir, "1.0.0-test", cfg, "test-token", indexHTML, nil, ctx, refreshFn)
 }
 
 func TestHandleStaticFile_Allowlisted(t *testing.T) {
@@ -34,7 +34,7 @@ func TestHandleStaticFile_Allowlisted(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	refreshFn := func(ctx context.Context, d, o string, c ...appconfig.Config) error { return nil }
-	s := NewServer(dir, "1.0.0", cfg, "", indexHTML, ctx, refreshFn)
+	s := NewServer(dir, "1.0.0", cfg, "", indexHTML, nil, ctx, refreshFn)
 
 	// Create themes.json in dir
 	if err := os.WriteFile(filepath.Join(dir, "themes.json"), []byte(`{"ok":true}`), 0o644); err != nil {

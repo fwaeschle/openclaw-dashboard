@@ -23,13 +23,13 @@ func testServer(t *testing.T, dir string) *Server {
 	cfg := defaultConfig()
 	cfg.AI.Enabled = false
 	cfg.Refresh.IntervalSeconds = 1
-	return NewServer(dir, "test", cfg, "", []byte("<head><body>__VERSION__</body>"), context.Background())
+	return NewServer(dir, "test", cfg, "", []byte("<head><body>__VERSION__</body>"), nil, context.Background())
 }
 
 func testServerWithConfig(t *testing.T, dir string, cfg Config) *Server {
 	t.Helper()
 	cfg.AI.Enabled = false
-	return NewServer(dir, "test", cfg, "", []byte("<head><body>__VERSION__</body>"), context.Background())
+	return NewServer(dir, "test", cfg, "", []byte("<head><body>__VERSION__</body>"), nil, context.Background())
 }
 
 // --- Cache coherence ---
@@ -242,7 +242,7 @@ func TestChat_EmptyQuestion(t *testing.T) {
 	dir := t.TempDir()
 	cfg := defaultConfig()
 	cfg.AI.Enabled = true
-	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), context.Background())
+	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), nil, context.Background())
 
 	body := `{"question":"   "}`
 	req := httptest.NewRequest(http.MethodPost, "/api/chat", strings.NewReader(body))
@@ -258,7 +258,7 @@ func TestChat_QuestionTooLong(t *testing.T) {
 	dir := t.TempDir()
 	cfg := defaultConfig()
 	cfg.AI.Enabled = true
-	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), context.Background())
+	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), nil, context.Background())
 
 	q := strings.Repeat("a", maxQuestionLen+1)
 	body := `{"question":"` + q + `"}`
@@ -275,7 +275,7 @@ func TestChat_BodyTooLarge(t *testing.T) {
 	dir := t.TempDir()
 	cfg := defaultConfig()
 	cfg.AI.Enabled = true
-	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), context.Background())
+	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), nil, context.Background())
 
 	body := strings.Repeat("x", maxBodyBytes+100)
 	req := httptest.NewRequest(http.MethodPost, "/api/chat", strings.NewReader(body))
@@ -291,7 +291,7 @@ func TestChat_InvalidJSON(t *testing.T) {
 	dir := t.TempDir()
 	cfg := defaultConfig()
 	cfg.AI.Enabled = true
-	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), context.Background())
+	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), nil, context.Background())
 
 	req := httptest.NewRequest(http.MethodPost, "/api/chat", strings.NewReader("{bad"))
 	w := httptest.NewRecorder()
@@ -306,7 +306,7 @@ func TestChat_MissingDataJSON_Returns503(t *testing.T) {
 	dir := t.TempDir()
 	cfg := defaultConfig()
 	cfg.AI.Enabled = true
-	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), context.Background())
+	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), nil, context.Background())
 
 	req := httptest.NewRequest(http.MethodPost, "/api/chat", strings.NewReader(`{"question":"hello"}`))
 	w := httptest.NewRecorder()
@@ -321,7 +321,7 @@ func TestChat_InvalidDataJSON_Returns500(t *testing.T) {
 	dir := t.TempDir()
 	cfg := defaultConfig()
 	cfg.AI.Enabled = true
-	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), context.Background())
+	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), nil, context.Background())
 
 	if err := os.WriteFile(filepath.Join(dir, "data.json"), []byte("{bad json"), 0o644); err != nil {
 		t.Fatal(err)
@@ -340,7 +340,7 @@ func TestChat_NullDataJSON_Returns500(t *testing.T) {
 	dir := t.TempDir()
 	cfg := defaultConfig()
 	cfg.AI.Enabled = true
-	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), context.Background())
+	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), nil, context.Background())
 
 	nullData, err := os.ReadFile(filepath.Join("testdata", "dashboard", "data-null.json"))
 	if err != nil {
@@ -384,7 +384,7 @@ func TestGetDataCached_NullDataJSON_ReturnsError(t *testing.T) {
 
 func TestIndex_VersionInjected(t *testing.T) {
 	dir := t.TempDir()
-	srv := NewServer(dir, "1.2.3", defaultConfig(), "", []byte("<head><body>__VERSION__</body>"), context.Background())
+	srv := NewServer(dir, "1.2.3", defaultConfig(), "", []byte("<head><body>__VERSION__</body>"), nil, context.Background())
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
@@ -397,7 +397,7 @@ func TestIndex_VersionInjected(t *testing.T) {
 
 func TestIndex_RuntimeInjected(t *testing.T) {
 	dir := t.TempDir()
-	srv := NewServer(dir, "1.0", defaultConfig(), "", []byte("<head><body>__RUNTIME__ · v__VERSION__</body>"), context.Background())
+	srv := NewServer(dir, "1.0", defaultConfig(), "", []byte("<head><body>__RUNTIME__ · v__VERSION__</body>"), nil, context.Background())
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
@@ -416,7 +416,7 @@ func TestIndex_ThemeMetaInjected(t *testing.T) {
 	dir := t.TempDir()
 	cfg := defaultConfig()
 	cfg.Theme.Preset = "solar"
-	srv := NewServer(dir, "1.0", cfg, "", []byte("<head><body></body>"), context.Background())
+	srv := NewServer(dir, "1.0", cfg, "", []byte("<head><body></body>"), nil, context.Background())
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
@@ -521,7 +521,7 @@ func TestChat_RateLimitExceeded(t *testing.T) {
 	dir := t.TempDir()
 	cfg := defaultConfig()
 	cfg.AI.Enabled = true
-	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), context.Background())
+	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), nil, context.Background())
 
 	// Send chatRateLimit requests — all should be accepted (400 because no gateway, but not 429)
 	for i := range chatRateLimit {
@@ -554,7 +554,7 @@ func TestChat_RateLimitPerIP(t *testing.T) {
 	dir := t.TempDir()
 	cfg := defaultConfig()
 	cfg.AI.Enabled = true
-	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), context.Background())
+	srv := NewServer(dir, "test", cfg, "tok", []byte("<head></head>"), nil, context.Background())
 
 	// Exhaust rate limit for IP A
 	for range chatRateLimit {

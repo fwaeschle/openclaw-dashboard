@@ -24,7 +24,7 @@ func testServerWithCtxAndMockRefresh(t *testing.T, dir string, ctx context.Conte
 	mockRefresh := func(ctx context.Context, dir, home string, cfg ...appconfig.Config) error {
 		return nil
 	}
-	return NewServer(dir, "test", cfg, "", []byte("<head><body>__VERSION__</body>"), ctx, mockRefresh)
+	return NewServer(dir, "test", cfg, "", []byte("<head><body>__VERSION__</body>"), nil, ctx, mockRefresh)
 }
 
 func writeMinimalData(t *testing.T, dir string) {
@@ -94,7 +94,7 @@ func TestStartRefresh_ReturnsInFlightChannelDuringShutdown(t *testing.T) {
 		<-blockRefresh // block until test releases
 		return nil
 	}
-	srv := NewServer(dir, "test", cfg, "", []byte("<head><body>__VERSION__</body>"), ctx, slowRefresh)
+	srv := NewServer(dir, "test", cfg, "", []byte("<head><body>__VERSION__</body>"), nil, ctx, slowRefresh)
 
 	// Start a refresh (will block)
 	ch := srv.startRefresh()
@@ -139,7 +139,7 @@ func TestStartRefresh_SkipsAfterShutdown_NoInFlight(t *testing.T) {
 		<-blockRefresh
 		return nil
 	}
-	srv := NewServer(dir, "test", cfg, "", []byte("<head><body>__VERSION__</body>"), ctx, slowRefresh)
+	srv := NewServer(dir, "test", cfg, "", []byte("<head><body>__VERSION__</body>"), nil, ctx, slowRefresh)
 
 	// Ensure refreshRunning is false and lastRefresh is old — bypass all guards
 	// except the shutdown check, which is what we're testing.

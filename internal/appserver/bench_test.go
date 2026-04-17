@@ -21,7 +21,7 @@ func BenchmarkLoadData_CacheHit(b *testing.B) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	s := NewServer(dir, "1.0.0", cfg, "", []byte("<html></html>"), ctx, nil)
+	s := NewServer(dir, "1.0.0", cfg, "", []byte("<html></html>"), nil, ctx, nil)
 
 	// Prime the cache
 	if _, _, err := s.loadData(); err != nil {
@@ -45,7 +45,7 @@ func BenchmarkLoadData_CacheMiss(b *testing.B) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	s := NewServer(dir, "1.0.0", cfg, "", []byte("<html></html>"), ctx, nil)
+	s := NewServer(dir, "1.0.0", cfg, "", []byte("<html></html>"), nil, ctx, nil)
 
 	b.ResetTimer()
 	for b.Loop() {

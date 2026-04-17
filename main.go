@@ -24,6 +24,9 @@ import (
 //go:embed web/index.html
 var indexHTML []byte
 
+//go:embed web/login.html
+var loginHTML []byte
+
 // BuildVersion is set at link time.
 var BuildVersion string
 
@@ -171,7 +174,7 @@ func Main() int {
 	serverCtx, serverCancel := context.WithCancel(cmdCtx)
 	defer serverCancel()
 
-	srv := NewServer(dir, version, cfg, gatewayToken, indexHTML, serverCtx)
+	srv := NewServer(dir, version, cfg, gatewayToken, indexHTML, loginHTML, serverCtx)
 
 	// Pre-warm data.json in background so first browser hit is instant
 	srv.PreWarm()

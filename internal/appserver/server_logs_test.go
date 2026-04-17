@@ -303,7 +303,7 @@ func newTestServerWithOpenclawHome(t *testing.T, cfg appconfig.Config, openclawD
 	t.Setenv("OPENCLAW_HOME", openclawDir)
 
 	refreshFn := func(ctx context.Context, d, o string, c ...appconfig.Config) error { return nil }
-	return NewServer(dir, "1.0.0", cfg, "", []byte("<html><body>__VERSION__ __RUNTIME__</body></html>"), ctx, refreshFn)
+	return NewServer(dir, "1.0.0", cfg, "", []byte("<html><body>__VERSION__ __RUNTIME__</body></html>"), nil, ctx, refreshFn)
 }
 
 func writeLines(t *testing.T, path string, lines ...string) {

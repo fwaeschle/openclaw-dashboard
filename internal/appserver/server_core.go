@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mudrii/openclaw-dashboard/internal/appauth"
 	appconfig "github.com/mudrii/openclaw-dashboard/internal/appconfig"
 	"github.com/mudrii/openclaw-dashboard/internal/appruntime"
 	appsystem "github.com/mudrii/openclaw-dashboard/internal/appsystem"
@@ -130,9 +131,13 @@ type Server struct {
 
 	// Chat rate limiter (10 req/min per IP)
 	chatLimiter chatRateLimiter
+
+	// Login page template and rate limiter
+	loginHTMLRaw     string
+	loginRateLimiter *appauth.LoginRateLimiter
 }
 
-func NewServer(dir, version string, cfg appconfig.Config, gatewayToken string, indexHTML []byte, serverCtx context.Context, refreshFn func(context.Context, string, string, ...appconfig.Config) error) *Server {
+func NewServer(dir, version string, cfg appconfig.Config, gatewayToken string, indexHTML, loginHTML []byte, serverCtx context.Context, refreshFn func(context.Context, string, string, ...appconfig.Config) error) *Server {
 	openclawPath := appruntime.ResolveOpenclawPath()
 	content := string(indexHTML)
 	preset := html.EscapeString(cfg.Theme.Preset)
@@ -156,7 +161,24 @@ func NewServer(dir, version string, cfg appconfig.Config, gatewayToken string, i
 		ctx:                serverCtx,
 		done:               serverCtx.Done(),
 	}
-	// Start periodic cleanup of stale rate-limit entries
+	s.loginHTMLRaw = string(loginHTML)
+	s.loginRateLimiter = appauth.NewLoginRateLimiter(5, 300)
+
+	// Start periodic cleanup of stale login rate-limit entries
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				s.loginRateLimiter.Cleanup()
+			case <-serverCtx.Done():
+				return
+			}
+		}
+	}()
+
+	// Start periodic cleanup of stale chat rate-limit entries
 	go func() {
 		ticker := time.NewTicker(chatRateCleanupInterval)
 		defer ticker.Stop()

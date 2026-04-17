@@ -12,8 +12,8 @@ type Server struct {
 	systemSvc *SystemService
 }
 
-func NewServer(dir, version string, cfg Config, gatewayToken string, indexHTML []byte, serverCtx context.Context) *Server {
-	inner := appserver.NewServer(dir, version, cfg, gatewayToken, indexHTML, serverCtx, refreshCollectorFunc)
+func NewServer(dir, version string, cfg Config, gatewayToken string, indexHTML, loginHTML []byte, serverCtx context.Context) *Server {
+	inner := appserver.NewServer(dir, version, cfg, gatewayToken, indexHTML, loginHTML, serverCtx, refreshCollectorFunc)
 	return &Server{
 		inner:     inner,
 		systemSvc: inner.SystemService(),
