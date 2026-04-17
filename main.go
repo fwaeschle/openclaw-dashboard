@@ -1,8 +1,10 @@
 package dashboard
 
 import (
+	"bufio"
 	"context"
 	_ "embed"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -17,6 +19,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/mudrii/openclaw-dashboard/internal/appauth"
 	"github.com/mudrii/openclaw-dashboard/internal/appruntime"
 	"github.com/mudrii/openclaw-dashboard/internal/appservice"
 )
@@ -51,6 +54,8 @@ func Main() int {
 	// like --bind/--port are not consumed by the default flagset.
 	if subcmd, rest := normaliseCmd(os.Args[1:]); subcmd != "" {
 		switch subcmd {
+		case "hash-password":
+			return runHashPassword()
 		case "install", "uninstall", "start", "stop", "restart", "status":
 			dir, dirErr := resolveDashboardDirWithError(binDir)
 			if dirErr != nil {
@@ -93,7 +98,7 @@ func Main() int {
 			})
 		default:
 			fmt.Fprintf(os.Stderr, "[dashboard] unknown command %q\n", subcmd)
-			fmt.Fprintln(os.Stderr, "Usage: openclaw-dashboard [service] install|uninstall|start|stop|restart|status")
+			fmt.Fprintln(os.Stderr, "Usage: openclaw-dashboard [service] install|uninstall|start|stop|restart|status|hash-password")
 			return 1
 		}
 	} else if len(os.Args) > 1 && os.Args[1] == "service" {
@@ -115,6 +120,27 @@ func Main() int {
 		version = detectVersion(cmdCtx, dir)
 	}
 	cfg := loadConfig(dir)
+
+	// Auth: ensure session secret exists if users are configured
+	if len(cfg.Auth.Users) > 0 && cfg.Auth.SessionSecret == "" {
+		secret, err := appauth.GenerateSessionSecret()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "[dashboard] failed to generate session secret: %v\n", err)
+			return 1
+		}
+		cfg.Auth.SessionSecret = secret
+		cfgPath := filepath.Join(dir, "config.json")
+		if data, err := json.MarshalIndent(cfg, "", "  "); err == nil {
+			if err := os.WriteFile(cfgPath, data, 0o644); err != nil {
+				slog.Warn("[dashboard] failed to save generated session secret", "error", err)
+			} else {
+				slog.Info("[dashboard] generated and saved new session secret")
+			}
+		}
+	}
+	if len(cfg.Auth.Users) == 0 && cfg.Auth.SessionSecret == "" {
+		slog.Warn("[dashboard] no auth users configured — login page will show but nobody can log in")
+	}
 
 	// Env var defaults
 	envBind := os.Getenv("DASHBOARD_BIND")
@@ -341,6 +367,27 @@ func runServiceCmd(cmd string, opts serviceCmdOpts) int {
 		fmt.Fprintln(os.Stderr, "Usage: openclaw-dashboard [service] install|uninstall|start|stop|restart|status")
 		return 1
 	}
+}
+
+func runHashPassword() int {
+	fmt.Fprint(os.Stderr, "Password: ")
+	scanner := bufio.NewScanner(os.Stdin)
+	if !scanner.Scan() {
+		fmt.Fprintln(os.Stderr, "error reading password")
+		return 1
+	}
+	password := scanner.Text()
+	if password == "" {
+		fmt.Fprintln(os.Stderr, "password cannot be empty")
+		return 1
+	}
+	hash, err := appauth.HashPassword(password)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error hashing password: %v\n", err)
+		return 1
+	}
+	fmt.Println(hash)
+	return 0
 }
 
 func localIP() string {
