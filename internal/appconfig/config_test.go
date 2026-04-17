@@ -203,3 +203,39 @@ func TestExpandHome_WithoutTilde(t *testing.T) {
 		t.Errorf("absolute path should be unchanged, got %q", result)
 	}
 }
+
+func TestAuthConfigParsing(t *testing.T) {
+	dir := t.TempDir()
+	cfgJSON := `{
+		"auth": {
+			"users": [{"username": "fw", "password_hash": "pbkdf2:100000:aabbccdd:eeff0011"}],
+			"session_secret": "abc123hex",
+			"session_max_age": 3600
+		}
+	}`
+	os.WriteFile(filepath.Join(dir, "config.json"), []byte(cfgJSON), 0644)
+
+	cfg := Load(dir)
+	if len(cfg.Auth.Users) != 1 {
+		t.Fatalf("expected 1 user, got %d", len(cfg.Auth.Users))
+	}
+	if cfg.Auth.Users[0].Username != "fw" {
+		t.Errorf("expected username 'fw', got %q", cfg.Auth.Users[0].Username)
+	}
+	if cfg.Auth.SessionSecret != "abc123hex" {
+		t.Errorf("expected session_secret 'abc123hex', got %q", cfg.Auth.SessionSecret)
+	}
+	if cfg.Auth.SessionMaxAge != 3600 {
+		t.Errorf("expected session_max_age 3600, got %d", cfg.Auth.SessionMaxAge)
+	}
+}
+
+func TestAuthConfigDefaults(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "config.json"), []byte(`{}`), 0644)
+
+	cfg := Load(dir)
+	if cfg.Auth.SessionMaxAge != 604800 {
+		t.Errorf("expected default session_max_age 604800, got %d", cfg.Auth.SessionMaxAge)
+	}
+}

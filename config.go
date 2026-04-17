@@ -12,6 +12,8 @@ type AlertsConfig = appconfig.AlertsConfig
 type MetricThreshold = appconfig.MetricThreshold
 type SystemConfig = appconfig.SystemConfig
 type Config = appconfig.Config
+type AuthConfig = appconfig.AuthConfig
+type AuthUser = appconfig.AuthUser
 
 func defaultConfig() Config {
 	return appconfig.Default()

@@ -77,6 +77,17 @@ type SystemConfig struct {
 	Disk               MetricThreshold `json:"disk"`
 }
 
+type AuthUser struct {
+	Username     string `json:"username"`
+	PasswordHash string `json:"password_hash"`
+}
+
+type AuthConfig struct {
+	Users         []AuthUser `json:"users"`
+	SessionSecret string     `json:"session_secret"`
+	SessionMaxAge int        `json:"session_max_age"`
+}
+
 type Config struct {
 	Bot      BotConfig     `json:"bot"`
 	Theme    ThemeConfig   `json:"theme"`
@@ -87,6 +98,7 @@ type Config struct {
 	Logs     LogsConfig    `json:"logs"`
 	Alerts   AlertsConfig  `json:"alerts"`
 	System   SystemConfig  `json:"system"`
+	Auth     AuthConfig    `json:"auth"`
 }
 
 func Default() Config {
@@ -249,6 +261,9 @@ func Load(dir string) Config {
 	clampThreshold(&cfg.System.RAM, cfg.System.WarnPercent, cfg.System.CriticalPercent)
 	clampThreshold(&cfg.System.Swap, cfg.System.WarnPercent, cfg.System.CriticalPercent)
 	clampThreshold(&cfg.System.Disk, cfg.System.WarnPercent, cfg.System.CriticalPercent)
+	if cfg.Auth.SessionMaxAge <= 0 {
+		cfg.Auth.SessionMaxAge = 604800
+	}
 	return cfg
 }
 
