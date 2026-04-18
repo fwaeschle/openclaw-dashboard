@@ -88,6 +88,12 @@ type AuthConfig struct {
 	SessionMaxAge int        `json:"session_max_age"`
 }
 
+type SecretsConfig struct {
+	Enabled   bool   `json:"enabled"`
+	EnvPath   string `json:"env_path"`
+	AuditPath string `json:"audit_path"`
+}
+
 type Config struct {
 	Bot      BotConfig     `json:"bot"`
 	Theme    ThemeConfig   `json:"theme"`
@@ -99,6 +105,7 @@ type Config struct {
 	Alerts   AlertsConfig  `json:"alerts"`
 	System   SystemConfig  `json:"system"`
 	Auth     AuthConfig    `json:"auth"`
+	Secrets  SecretsConfig `json:"secrets"`
 }
 
 func Default() Config {
@@ -132,6 +139,11 @@ func Default() Config {
 			DailyCostWarn: 20,
 			ContextPct:    80,
 			MemoryMb:      640,
+		},
+		Secrets: SecretsConfig{
+			Enabled:   false,
+			EnvPath:   "/root/.openclaw/.env",
+			AuditPath: "/root/.openclaw/workspace-secrets/memory/audit.jsonl",
 		},
 		System: SystemConfig{
 			Enabled:            true,
@@ -263,6 +275,12 @@ func Load(dir string) Config {
 	clampThreshold(&cfg.System.Disk, cfg.System.WarnPercent, cfg.System.CriticalPercent)
 	if cfg.Auth.SessionMaxAge <= 0 {
 		cfg.Auth.SessionMaxAge = 604800
+	}
+	if cfg.Secrets.EnvPath == "" {
+		cfg.Secrets.EnvPath = "/root/.openclaw/.env"
+	}
+	if cfg.Secrets.AuditPath == "" {
+		cfg.Secrets.AuditPath = "/root/.openclaw/workspace-secrets/memory/audit.jsonl"
 	}
 	return cfg
 }

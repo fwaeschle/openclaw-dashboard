@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	appserver "github.com/mudrii/openclaw-dashboard/internal/appserver"
+	"github.com/mudrii/openclaw-dashboard/internal/appsecrets"
 )
 
 type Server struct {
@@ -14,6 +15,14 @@ type Server struct {
 
 func NewServer(dir, version string, cfg Config, gatewayToken string, indexHTML, loginHTML []byte, serverCtx context.Context) *Server {
 	inner := appserver.NewServer(dir, version, cfg, gatewayToken, indexHTML, loginHTML, serverCtx, refreshCollectorFunc)
+	if cfg.Secrets.Enabled {
+		svc := appsecrets.NewService(appsecrets.Config{
+			EnvPath:   cfg.Secrets.EnvPath,
+			AuditPath: cfg.Secrets.AuditPath,
+			Reload:    appsecrets.SystemReload,
+		})
+		inner.WithSecrets(svc)
+	}
 	return &Server{
 		inner:     inner,
 		systemSvc: inner.SystemService(),

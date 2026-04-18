@@ -14,6 +14,7 @@ type SystemConfig = appconfig.SystemConfig
 type Config = appconfig.Config
 type AuthConfig = appconfig.AuthConfig
 type AuthUser = appconfig.AuthUser
+type SecretsConfig = appconfig.SecretsConfig
 
 func defaultConfig() Config {
 	return appconfig.Default()

@@ -239,3 +239,16 @@ func TestAuthConfigDefaults(t *testing.T) {
 		t.Errorf("expected default session_max_age 604800, got %d", cfg.Auth.SessionMaxAge)
 	}
 }
+
+func TestSecretsConfigDefaults(t *testing.T) {
+	cfg := Default()
+	if cfg.Secrets.Enabled {
+		t.Fatalf("expected Secrets disabled by default")
+	}
+	if cfg.Secrets.EnvPath != "/root/.openclaw/.env" {
+		t.Fatalf("wrong env_path default: %q", cfg.Secrets.EnvPath)
+	}
+	if cfg.Secrets.AuditPath != "/root/.openclaw/workspace-secrets/memory/audit.jsonl" {
+		t.Fatalf("wrong audit_path default: %q", cfg.Secrets.AuditPath)
+	}
+}
