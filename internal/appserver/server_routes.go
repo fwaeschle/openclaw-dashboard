@@ -72,6 +72,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	case r.Method == http.MethodPost && r.URL.Path == "/api/chat":
 		s.handleChat(w, r)
+	case isRead && r.URL.Path == "/secrets":
+		s.handleSecretsPage(w, r)
+	case r.Method == http.MethodPost && r.URL.Path == "/secrets":
+		s.handleSecretsSet(w, r)
+	case r.Method == http.MethodPost && r.URL.Path == "/secrets/delete":
+		s.handleSecretsDelete(w, r)
 	default:
 		if isRead {
 			s.notFound(w, r)

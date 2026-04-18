@@ -16,6 +16,7 @@ import (
 	"github.com/mudrii/openclaw-dashboard/internal/appauth"
 	appconfig "github.com/mudrii/openclaw-dashboard/internal/appconfig"
 	"github.com/mudrii/openclaw-dashboard/internal/appruntime"
+	"github.com/mudrii/openclaw-dashboard/internal/appsecrets"
 	appsystem "github.com/mudrii/openclaw-dashboard/internal/appsystem"
 )
 
@@ -121,6 +122,9 @@ type Server struct {
 
 	// System metrics service
 	systemSvc *appsystem.SystemService
+
+	// Secrets service (nil means /secrets returns 404)
+	secrets *appsecrets.Service
 
 	// Refresh collector function (injected at construction, not a global)
 	refreshFn func(context.Context, string, string, ...appconfig.Config) error
